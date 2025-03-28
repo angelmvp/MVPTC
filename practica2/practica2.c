@@ -1,3 +1,5 @@
+//Angel MArtin VAzquez PErez
+//5BV1
 #include <stdio.h>
 #include <stdlib.h>
 #include "Lenguajes.h"
@@ -44,7 +46,7 @@ int main(){
         if(!nuevoLenguaje){
             puts("no hay ya mas menmoria para el elengujae nuevo");
         }
-        puts("que operacion desea realizar: ");
+        puts("\nque operacion desea realizar: ");
         puts("1.- Union");
         puts("2.- Concatenacion");
         puts("3.- Potencia");

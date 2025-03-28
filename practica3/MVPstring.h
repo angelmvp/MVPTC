@@ -82,14 +82,15 @@ char* invertirCadena(char* cadena){
 
 char* copiarCadena(char* cadena){
     int tam=cadenaTam(cadena);
-    printf(" \nmtamanio de cadena%d: ",tam);
     char* nuevaCadena = (char* )malloc(tam+1);
     int i=0;
-    while (tam!='\0'){
+    while (tam!=0){
         *(nuevaCadena + i) = *(cadena+i);
+        tam--;
+        i++;
     }
     nuevaCadena[i]='\0';
-    printf("cadnea retornada %s: \n", nuevaCadena);
+    //printf("cadnea retornada %s: \n", nuevaCadena);
     return nuevaCadena  ;  
 }
 int cadenasIguales(char* cadena1,char* cadena2){
@@ -107,4 +108,13 @@ int cadenasIguales(char* cadena1,char* cadena2){
         iguales=0;
     }
     return iguales;
+}
+
+
+
+int charToInt(char* num){
+    int i=0;
+    int numero=0;
+    numero=numero*10+(*(num)-'0');
+    return numero;
 }

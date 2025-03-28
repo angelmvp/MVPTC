@@ -8,7 +8,7 @@ typedef struct nodo{
 }Nodo;
 typedef struct lenguaje{
     Nodo* inicio;
-    Nodo* fin;
+    //Nodo* fin;
     int tam;
 }Lenguaje;
 
@@ -40,7 +40,6 @@ void limpiarLenguaje(Lenguaje* L);
 void __init__(Lenguaje* L){
     L->tam=0;
     L->inicio=NULL;
-    L->fin=NULL;
 }
 void limpiarLenguaje(Lenguaje*L){
     Nodo* aux;
@@ -49,27 +48,25 @@ void limpiarLenguaje(Lenguaje*L){
         L->inicio=L->inicio->sig;
         eliminarNodo(aux);
     }
-    L->fin=NULL;
     L->tam=0;
 }
 int isEmpty(Lenguaje *L){
-    return L->inicio==0;
+    return L->tam==0;
 }
 int pushLenguaje(Lenguaje* L, Nodo* n) {
     if (isEmpty(L)) {
         L->inicio = n;
     } else {
         Nodo* aux = L->inicio;
-        while (aux) {
+        while (aux->sig) {
             if (cadenasIguales(aux->cadena, n->cadena)){
                 printf("la cadena %s es igual a %s : \n",aux->cadena,n->cadena);
                 return 0; 
             }
             aux = aux->sig;
         }
-        L->fin->sig = n;
+        aux->sig = n;
     }
-    L->fin = n;
     n->sig=NULL;
     L->tam++;
     //printf("%d\n",L->tam);
@@ -113,9 +110,9 @@ Lenguaje* unionLenguajes(Lenguaje* L1,Lenguaje* L2){
         printf("lso lenguajes estan vacios");
         return nuevoLenguaje;
     }else if(L1->inicio && !L2->inicio){
-        return L1;
+        return copiarLenguaje(L1);
     }else if(!L1->inicio && L2->inicio){
-        return L2;
+        return copiarLenguaje(L2);
     }else{
         Nodo* aux;
         aux=L1->inicio;
@@ -176,7 +173,7 @@ Lenguaje* potenciaDeLenguaje(Lenguaje* L,int potencia){
     }else if (potencia==0){
         return nuevoLenguaje;
     }else if(potencia==1){
-        return L;
+        return copiarLenguaje(L);
     }else{
         lenguajeAux=L;
         if(potencia<0){
@@ -225,6 +222,14 @@ Lenguaje* copiarLenguaje(Lenguaje* L){
         printf("lso lenguajes estan vacios");
         return nuevoLenguaje;
     }else{
+        Nodo* aux;
+        aux=L->inicio;
+        for(int i=0;i<L->tam;i++){
+            Nodo* nuevoNodo;
+            nuevoNodo = crearNodo(aux->cadena);
+            pushLenguaje(nuevoLenguaje,nuevoNodo);
+            aux=aux->sig;
+        }
     }
     return nuevoLenguaje;
 }

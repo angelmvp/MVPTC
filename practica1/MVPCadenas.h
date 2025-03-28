@@ -78,7 +78,6 @@ char* obtenerSubCadena(char* cadena,int p,int s){
     }else if (p+s==tamCadena){
         nuevaCadena="λ";
     }else{
-        puts("emoezando a hacer las machimburriadas");
         nuevaCadena= obtenerSubfijo(obtenerPrefijo(cadena,s),p);
     }
     return nuevaCadena;
@@ -96,7 +95,6 @@ char* obtenerSubsecuencia(char* cadena, int* indices, int tamIndices) {
     char* nuevaCadena = (char*)malloc((tamCadena - tamIndicesSinRepetidos + 1) * sizeof(char));
     if (nuevaCadena == NULL) {
         puts("----ERROR: No hay memoria disponible");
-        free(indicesSinRepetidos);
         return "";
     }
 
@@ -116,13 +114,12 @@ char* obtenerSubsecuencia(char* cadena, int* indices, int tamIndices) {
                 }
             }
             if (!eliminar) {
-                nuevaCadena[j] = cadena[i];
+                *(nuevaCadena+j) = *(cadena+i);
                 j++;
             }
         }
         nuevaCadena[j] = '\0';
     }
-    free(indicesSinRepetidos);
     return nuevaCadena;
 }
 
