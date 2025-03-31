@@ -4,20 +4,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "MVPPila.h"
-#include <string.h>
-//#include "MVPCola.h"
 
 Estados* crearEstadosDeLinea(char* linea);
 char* crearAlfabeto(char* linea);
-void asignarEstadoInicial(Estado* estado);
-void asignarEstadoAceptacion(Estado* estado);
+void asignarEstadoInicial(Estados* estado,char* etiqueta);
+void asignarEstadoAceptacion(Estados* estado,char* etiqueta);
 void asignarTransiciones(Estados* estados,char* linea);
 int validarAutomata(Estados* estados,char* cadena);
 int main() {
     puts("Bienvenido al practica 3 de automatas\n");
-    char* cadena="111111111111";
+    char* cadena = (char*)malloc(250 * sizeof(char));
     Estados* estados;
-    FILE* file = fopen("ejemplo3.txt", "r");
+    FILE* file = fopen("ejemplo3si.txt", "r");
     if (file == NULL) {
         perror("No se pudo abrir el archivo");
         return 1;
@@ -31,36 +29,52 @@ int main() {
         if (linea[cadenaTam(linea) - 1] == '\n') {
             linea[cadenaTam(linea) - 1] = '\0';
         }
-
         if (indice == 0) {
             estados = crearEstadosDeLinea(linea);
         } else if (indice == 1) {
             char* alfabeto = crearAlfabeto(linea);
             printf("Alfabeto: %s\n", alfabeto);
         } else if (indice == 2) {
-            int estadoInicial = charToInt(linea);
-            asignarEstadoInicial(estados->estados[estadoInicial]);
+            char* estadoInicial = copiarCadena(linea);
+            asignarEstadoInicial(estados,estadoInicial);
         } else if (indice == 3) {
-            int i = 0;
-            while (linea[i] != '\0') {
-                if (linea[i] != ',') {
-                    int estadoAceptacion = charToInt(linea+i);
-                    printf("Estado de aceptacion: %d\n", estadoAceptacion);
-                    asignarEstadoAceptacion(estados->estados[estadoAceptacion]);
-                }
-                i++;
+            char* token = linea;
+        char* end = linea;
+        
+        while (*end) {
+            if (*end == ',') {
+                *end = '\0'; // Temporalmente terminar la cadena
+                asignarEstadoAceptacion(estados, token);
+                *end = ','; // Restaurar la coma
+                token = end + 1;
             }
+            end++;
+        }
+        // Procesar el último estado
+        if (*token) {
+            asignarEstadoAceptacion(estados, token);
+        }
         } else {    
             asignarTransiciones(estados,linea);
         }
         indice++;
     }
-    puts("cadenas validas");
-    int isValido= validarAutomata(estados,cadena);
-    if(isValido){
-        printf("cantidad de caminos validos %d", isValido);
-    }else{
-        printf("no se encontro ningun camion valido");
+    
+    int seguir;
+    while(seguir){
+        
+        printf("introduzca la cadena a validar\n");
+        scanf("%s",cadena);
+        int valido=validarAutomata(estados,cadena);
+        if(valido){
+            puts("cadenas validas");
+            printf("la cadena %s es valida\n", cadena);
+            printf("existen %d caminos validos\n", valido);
+        }else{
+            printf("la cadena %s no es valida\n", cadena);
+        }
+        printf("desea seguir validando cadenas? 1=si 0=no\n");
+        scanf("%d",&seguir);
     }
 
     // // for(int i=0;i<estados->cantidadEstados;i++){
@@ -72,63 +86,170 @@ int main() {
 
 Estados* crearEstadosDeLinea(char* linea) {
     Estados* estados = __init_estados();
-    char simbolo[2]; // Arreglo para almacenar un carácter y el terminador '\0'
-    int i= 0;
-    while (linea[i]) {
-        if (linea[i] != ',') {
-            simbolo[0] = linea[i]; // Copiar el carácter actual
-            simbolo[1] = '\0';    // Agregar el terminador de cadena
-            Estado* nuevoEstado = crearEstado(simbolo, 0, 0);
-            addEstadoEstados(estados, nuevoEstado);
-            nuevoEstado->transiciones = __init_transiciones();
+    char* inicio = linea;
+    char* fin = linea;
+    
+    while (*fin) {
+        if (*fin == ',') {
+            // Extraer el nombre del estado entre inicio y fin
+            int longitud = fin - inicio;
+            if (longitud > 0) {
+                char* nombreEstado;
+                for(int i = 0; i < longitud; i++) {
+                    nombreEstado[i] = inicio[i];
+                }
+                nombreEstado[longitud] = '\0';
+               
+                Estado* nuevoEstado = crearEstado(copiarCadena(nombreEstado), 0, 0);
+                addEstadoEstados(estados, nuevoEstado);
+                nuevoEstado->transiciones = __init_transiciones();
+            }
+            inicio = fin + 1;
         }
-        i++;
+        fin++;
+    }
+    
+    int longitud = fin - inicio;
+    if (longitud > 0) {
+        char* nombreEstado;
+        for(int i = 0; i < longitud; i++) {
+            nombreEstado[i] = inicio[i];
+        }
+        nombreEstado[longitud] = '\0';
+        Estado* nuevoEstado = crearEstado(copiarCadena(nombreEstado), 0, 0);
+        addEstadoEstados(estados, nuevoEstado);
+        nuevoEstado->transiciones = __init_transiciones();
     }
     return estados;
 }
 
 char* crearAlfabeto(char* linea) {
-    char* alfabeto = (char*)malloc(strlen(linea) + 1);
+    char* alfabeto = (char*)malloc(cadenaTam(linea) + 1);
     if (alfabeto == NULL) {
         puts("----ERROR: No hay memoria disponible");
         return NULL;
     }
-    strcpy(alfabeto, linea);
+    alfabeto=copiarCadena(linea);
     return alfabeto;
 }
 
-void asignarEstadoInicial(Estado* estado) {
-    estado->inicial = 1;
+void asignarEstadoInicial(Estados* estados,char* etiqueta) {
+    for (int i = 0; i < estados->cantidadEstados; i++) {
+        if (cadenasIguales(estados->estados[i]->etiqueta, etiqueta)) {
+            estados->estados[i]->inicial = 1;
+            printf("Estado inicial asignado: %s\n", estados->estados[i]->etiqueta);
+            return;
+        }
+    }
+    printf("Error: Estado inicial no encontrado\n");
 }
 
-void asignarEstadoAceptacion(Estado* estado) {
-    estado->aceptacion = 1;
+void asignarEstadoAceptacion(Estados* estados, char* etiqueta) {
+    for(int i = 0; i < estados->cantidadEstados; i++) {
+        if (cadenasIguales(estados->estados[i]->etiqueta, etiqueta)) {
+            estados->estados[i]->aceptacion = 1;
+            printf("Estado de aceptación asignado: %s\n", estados->estados[i]->etiqueta);
+            return;
+        }
+    }
+    printf("Error: Estado de aceptación '%s' no encontrado\n", etiqueta);
 }
 void asignarTransiciones(Estados* estados, char* linea) {
     printf("Transiciones: %s\n", linea);
-    int estado;
-    char simbolo[2]; // Arreglo para almacenar un carácter y el terminador '\0'
-    int estadoDestino;
-    int i = 0;
-
-    while (linea[i]) {
-        if (i == 0) {
-            estado = charToInt(linea + i); // Convertir el estado origen
-        } else if (i == 2) {
-            simbolo[0] = linea[i]; // Copiar el símbolo actual
-            simbolo[1] = '\0';    // Agregar el terminador de cadena
-        } else if (i == 4) {
-            estadoDestino = charToInt(linea + i); // Convertir el estado destino
+    char* inicio = linea;
+    char* cursor = linea;
+    int componente = 0;
+    
+    char* nombreOrigen = NULL;
+    char* simbolo = NULL;
+    char* nombreDestino = NULL;
+    
+    while (*cursor) {
+        if (*cursor == ',' || *cursor == '\0') {
+            // Calculamos longitud del componente actual
+            int longitud = cursor - inicio;
+            
+            // Reservamos memoria y copiamos el componente
+            char* buffer = (char*)malloc(longitud + 1);
+            char* ptr = buffer;
+            char* tmp = inicio;
+            
+            while (tmp < cursor) {
+                *ptr++ = *tmp++;
+            }
+            *ptr = '\0';
+            
+            // Asignamos a la variable correspondiente
+            if (componente == 0) {
+                nombreOrigen = buffer;
+            } else if (componente == 1) {
+                simbolo = buffer;
+            } else if (componente == 2) {
+                nombreDestino = buffer;
+            }
+            
+            componente++;
+            inicio = cursor + 1;
+            
+            if (componente >= 3) break; // Ya tenemos los 3 componentes
         }
-        i += 2;
+        cursor++;
     }
+    
+    // Procesar el último componente si no terminó con coma
+    if (componente < 3 && *inicio) {
+        int longitud = cursor - inicio;
+        if (longitud > 0) {
+            char* buffer = (char*)malloc(longitud + 1);
+            char* ptr = buffer;
+            char* tmp = inicio;
+            
+            while (tmp < cursor) {
+                *ptr++ = *tmp++;
+            }
+            *ptr = '\0';
+            
+            if (componente == 0) {
+                nombreOrigen = buffer;
+            } else if (componente == 1) {
+                simbolo = buffer;
+            } else if (componente == 2) {
+                nombreDestino = buffer;
+            }
+        }
+    }
+    
+    // Verificar que tenemos los 3 componentes
+    if (!nombreOrigen || !simbolo || !nombreDestino) {
+        printf("Error: Formato de transición incorrecto\n");
+        if (nombreOrigen) free(nombreOrigen);
+        if (simbolo) free(simbolo);
+        if (nombreDestino) free(nombreDestino);
+        return;
+    }
+    
+    // Imprimir los componentes
+    //printf("Origen: %s, Símbolo: %s, Destino: %s\n", nombreOrigen, simbolo, nombreDestino);
 
-    // printf("Estado: %d, Simbolo: %s, Estado destino: %d\n", estado, simbolo, estadoDestino);
-
-
-    // Crear la transición y agregarla al estado origen
-    Transicion* transicion = crearTransicion(simbolo, estados->estados[estadoDestino]);
-    addTransicionTransiciones(estados->estados[estado]->transiciones, transicion);
+    // parabuscarlosmamahuevasos de estados;
+    Estado* estadoOrigenPtr = NULL;
+    Estado* estadoDestinoPtr = NULL;
+    
+    for (int i = 0; i < estados->cantidadEstados; i++) {
+        if (cadenasIguales(estados->estados[i]->etiqueta, nombreOrigen)) {
+            estadoOrigenPtr = estados->estados[i];
+        }
+        if (cadenasIguales(estados->estados[i]->etiqueta, nombreDestino)) {
+            estadoDestinoPtr = estados->estados[i];
+        }
+    }
+    
+    if (estadoOrigenPtr && estadoDestinoPtr) {
+        Transicion* transicion = crearTransicion(simbolo, estadoDestinoPtr);
+        addTransicionTransiciones(estadoOrigenPtr->transiciones, transicion);
+    } else {
+        printf("Error: No se encontraron los estados %s o %s\n", nombreOrigen, nombreDestino);
+    }
 }
 Estado* obtenerEstadoInicial(Estados* estados){
     int i=0;
@@ -178,8 +299,7 @@ int validarAutomata(Estados* estados,char* cadena){
                 }
                 while(tamTransiciones!=0){
                     Transicion* transicionActual = &transicionesAux->transicion[tamTransiciones-1];
-                    char* cadenaTransicion = transicionActual->cadena;
-                    cadenaTransicion[1]='\0';
+                    char* cadenaTransicion = copiarCadena(transicionActual->cadena);
                     char cadenaEnNivel [2] ="";
                     cadenaEnNivel[0]=cadena[nuevoNivel-1];
                     cadenaEnNivel[1]='\0';
