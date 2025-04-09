@@ -15,7 +15,7 @@ int main() {
     puts("Bienvenido al practica 3 de automatas\n");
     char* cadena = (char*)malloc(250 * sizeof(char));
     Estados* estados;
-    FILE* file = fopen("ejemplo3si.txt", "r");
+    FILE* file = fopen("3.txt", "r");
     if (file == NULL) {
         perror("No se pudo abrir el archivo");
         return 1;
@@ -33,12 +33,11 @@ int main() {
             estados = crearEstadosDeLinea(linea);
         } else if (indice == 1) {
             char* alfabeto = crearAlfabeto(linea);
-            printf("Alfabeto: %s\n", alfabeto);
         } else if (indice == 2) {
             char* estadoInicial = copiarCadena(linea);
             asignarEstadoInicial(estados,estadoInicial);
         } else if (indice == 3) {
-            char* token = linea;
+        char* token = linea;
         char* end = linea;
         
         while (*end) {
@@ -63,7 +62,7 @@ int main() {
     int seguir;
     while(seguir){
         
-        printf("introduzca la cadena a validar\n");
+        printf("introduzca la cadena a validar: ");
         scanf("%s",cadena);
         int valido=validarAutomata(estados,cadena);
         if(valido){
@@ -108,7 +107,6 @@ Estados* crearEstadosDeLinea(char* linea) {
         }
         fin++;
     }
-    
     int longitud = fin - inicio;
     if (longitud > 0) {
         char* nombreEstado;
@@ -148,7 +146,7 @@ void asignarEstadoAceptacion(Estados* estados, char* etiqueta) {
     for(int i = 0; i < estados->cantidadEstados; i++) {
         if (cadenasIguales(estados->estados[i]->etiqueta, etiqueta)) {
             estados->estados[i]->aceptacion = 1;
-            printf("Estado de aceptación asignado: %s\n", estados->estados[i]->etiqueta);
+            printf("Estado de aceptacion: %s\n", estados->estados[i]->etiqueta);
             return;
         }
     }
@@ -294,8 +292,8 @@ int validarAutomata(Estados* estados,char* cadena){
                 Transiciones* transicionesAux= estadoAux->transiciones;
                 int tamTransiciones= estadoAux->transiciones->cantidadTransiciones;
                 if(tamTransiciones==0){
-                    puts("camino invalido");
-                    imprimirCamino(nodoAux->camino);
+                    // puts("camino invalido");
+                    // imprimirCamino(nodoAux->camino);
                 }
                 while(tamTransiciones!=0){
                     Transicion* transicionActual = &transicionesAux->transicion[tamTransiciones-1];
@@ -303,13 +301,13 @@ int validarAutomata(Estados* estados,char* cadena){
                     char cadenaEnNivel [2] ="";
                     cadenaEnNivel[0]=cadena[nuevoNivel-1];
                     cadenaEnNivel[1]='\0';
-                    char* nuevaCadena=cadenaEnNivel;
+                    char* nuevaCadena=  cadenaEnNivel;
                     // printf("comparando la cadena de transicion %s ", cadenaTransicion);
                     // printf("con la cadena original %s \n",nuevaCadena);
                     if(cadenasIguales(cadenaTransicion,nuevaCadena)){
                         //puts("cadenas iguales, se apila");
                         Estado* estadoActual=transicionActual->sigEstado;
-                        Camino* nuevoCamino = crearCamino(concatenar(concatenar(nodoAux->camino->cadenaEstados,"->"),estadoActual->etiqueta));
+                        Camino* nuevoCamino = crearCamino(concatenar(concatenar(nodoAux->camino->cadenaEstados,concatenar(concatenar("(",cadenaTransicion),")->")),estadoActual->etiqueta));
                         NodoPila* nuevoNodo = crearNodoPila(estadoActual,nuevoCamino,nuevoNivel);
                         apilar(pila,nuevoNodo);
                     }
