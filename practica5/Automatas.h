@@ -157,32 +157,97 @@ void imprimirTransicionesEstado(Estado* estado) {
 
 
 
+// EstadoDeterminista* crearestadoDeterminista(char* etiqueta, Estados* estados); // Modificado
+// TransicionesDeterministas* __init_transicionesDeterministas();
+// TransicionDeterminista* crearTransicionDeterminista(char* cadena, EstadoDeterminista* destino);
+// void addTransicionDeterministaTransiciones(TransicionesDeterministas* lista, TransicionDeterminista* nueva);
+// void imprimirEstadoDeterminista(EstadoDeterminista* estado); 
 
 typedef struct estadoDeterminista{
     char * etiqueta;
     Estados* estados;
-    Transiciones* transiciones;
+    struct transicionesDeterministas* transiciones; 
 }EstadoDeterminista;
 
-EstadoDeterminista* crearestadoDeterminista(char* etiqueta, Estados* estados, Transiciones* transiciones){
+// Transición para el DFA
+typedef struct transicionDeterminista {
+    EstadoDeterminista* sigEstado;
+    char* cadena;                  
+} TransicionDeterminista;
+
+typedef struct transicionesDeterministas {
+    TransicionDeterminista* transicion; 
+    int cantidadTransiciones;
+} TransicionesDeterministas;
+
+TransicionesDeterministas* __init_transicionesDeterministas() {
+    TransicionesDeterministas* trans = (TransicionesDeterministas*)malloc(sizeof(TransicionesDeterministas));
+    if (!trans) { /* Manejar error */ return NULL; }
+    trans->cantidadTransiciones = 0;
+    trans->transicion = NULL; 
+    return trans;
+}
+
+EstadoDeterminista* crearestadoDeterminista(char* etiqueta, Estados* estados){ // Quitar Transiciones* de los args
     EstadoDeterminista* estado = (EstadoDeterminista*) malloc(sizeof(EstadoDeterminista));
-    estado->etiqueta=copiarCadena(etiqueta);
-    estado->estados=estados;
-    estado->transiciones=transiciones;
+    if (!estado) { /* Manejar error */ return NULL; }
+    estado->etiqueta = copiarCadena(etiqueta); 
+    estado->estados = estados;
+    estado->transiciones = __init_transicionesDeterministas(); 
     return estado;
 }
-void addTransicionesEstadoDeterminista(EstadoDeterminista* estado, Transiciones* transiciones){
-    estado->transiciones=transiciones;
-}
-void imprimirEstadoDeterminista(EstadoDeterminista* estado){
-    printf("Estado determinista %s\n",estado->etiqueta);
-    for (int i=0;i<estado->estados->cantidadEstados;i++){
-        printf("Estado %s\n",estado->estados->estados[i]->etiqueta);
-    }
-    // printf("Transiciones\n");
-    // for (int i=0;i<estado->transiciones->cantidadTransiciones;i++){
-    //     printf("Transicion %s\n",estado->transiciones->transicion[i].cadena);
-    //     printf("Estado destino %s\n",estado->transiciones->transicion[i].sigEstado->etiqueta);
-    // }
 
+
+
+
+TransicionDeterminista* crearTransicionDeterminista(char* cadena, EstadoDeterminista* destino) {
+    TransicionDeterminista* trans = (TransicionDeterminista*)malloc(sizeof(TransicionDeterminista));
+    if (!trans) {
+         return NULL; 
+    }
+    trans->cadena = copiarCadena(cadena); 
+    trans->sigEstado = destino; 
+    return trans;
+}
+
+void addTransicionDeterministaTransiciones(TransicionesDeterministas* lista, TransicionDeterminista* nueva) {
+    if (!lista || !nueva) return;
+    lista->cantidadTransiciones++;
+    lista->transicion = (TransicionDeterminista*)realloc(lista->transicion, sizeof(TransicionDeterminista) * lista->cantidadTransiciones);
+    if (!lista->transicion) {
+        perror("Error al realocar memoria para transiciones deterministas");
+        lista->cantidadTransiciones--; 
+        return;
+    }
+    // Copiar la estructura (no solo el puntero)
+    lista->transicion[lista->cantidadTransiciones - 1] = *nueva;
+}
+
+void imprimirEstadoDeterminista(EstadoDeterminista* estado){
+    if (!estado) {
+        printf("Estado determinista NULL\n");
+        return;
+    }
+    printf("Estado %s ", estado->etiqueta);
+    // Imprimir el conjunto de estados NFA que representa
+    if (estado->estados) {
+        printf("= {");
+        for (int i = 0; i < estado->estados->cantidadEstados; i++) {
+            printf("%s%s", estado->estados->estados[i]->etiqueta, (i == estado->estados->cantidadEstados - 1) ? "" : ",");
+        }
+        printf("}\n");
+    } else {
+        printf("= {NULL}\n");
+    }
+
+    // Imprimir transiciones DFA
+    if (estado->transiciones && estado->transiciones->cantidadTransiciones > 0) {
+        printf("  Transiciones \n");
+        for (int i = 0; i < estado->transiciones->cantidadTransiciones; i++) {
+            TransicionDeterminista* t = &estado->transiciones->transicion[i];
+            printf(" %s-> %s\n", t->cadena, (t->sigEstado ? t->sigEstado->etiqueta : "NULL"));
+        }
+    } else {
+        printf("  (Sin transiciones DFA definidas)\n");
+    }
 }

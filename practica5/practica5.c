@@ -12,11 +12,12 @@ void asignarEstadoAceptacion(Estados* estado,char* etiqueta);
 void asignarTransiciones(Estados* estados,char* linea);
 int validarAutomata(Estados* estados,char* cadena);
 void crearAutomataDeterminista(Estados* estados,char* alfabeto);
+void generarArchivoTXT(EstadosDeterminista* estadosDeterminista,char* alfabeto);
 int main() {
     puts("Bienvenido al practica 5 de transformaciones de automatas no deterministas \n");
     char* cadena = (char*)malloc(250 * sizeof(char));
     Estados* estados;
-    FILE* file = fopen("otroEjemplo.txt", "r");
+    FILE* file = fopen("ejemploClase.txt", "r");
     if (file == NULL) {
         perror("No se pudo abrir el archivo");
         return 1;
@@ -267,7 +268,7 @@ void crearAutomataDeterminista(Estados* estados,char* alfabeto){
     nuevosEstados->cantidadEstados=0;
     nuevosEstados->estados=(Estado**)malloc(sizeof(Estado*)*10);
     Estados* estadosIniciales= cerraduraEpsilon(estadoInicial);
-    EstadoDeterminista* estadoA= crearestadoDeterminista("A", estadosIniciales, NULL);
+    EstadoDeterminista* estadoA= crearestadoDeterminista("A", estadosIniciales);
     imprimirEstadoDeterminista(estadoA);
     cerraduraEpsilonEstados(estadoA->estados);
     EstadosDeterminista* estadosDeterminista= __init__estadosDeterminista(estadosDeterminista);
@@ -292,125 +293,82 @@ void crearAutomataDeterminista(Estados* estados,char* alfabeto){
             if(nuevosEstadosSimbolo->cantidadEstados==0){
                 printf("no se encontraron estados\n");
             }else if(existeEnConjuntoDeterminista(estadosDeterminista,nuevosEstadosSimbolo)){
-                printf("ya existe el conjunto de estados estado\n");
+                EstadoDeterminista* existente= existeEnConjuntoDeterminista(estadosDeterminista,nuevosEstadosSimbolo);
+                printf("ya existe el conjunto de estados\n");
+                TransicionDeterminista* transicion= crearTransicionDeterminista(simboloStr,existente);
+                printf("se agrega la transicion %s\n", transicion->cadena);
+                printf("al estado %s\n", existente->etiqueta);
+                addTransicionDeterministaTransiciones(estadoActual->transiciones, transicion);
+                printf("se agrego la transicion\n");
             }else{
                 printf("se creara el nuevo estado");
                 char nombreEstado[2];
                 nombreEstado[0] = 'A' + iteradorNombres;
                 nombreEstado[1] = '\0';
-                EstadoDeterminista* nuevoDeterminista= crearestadoDeterminista(nombreEstado, nuevosEstadosSimbolo, NULL);
+                EstadoDeterminista* nuevoDeterminista= crearestadoDeterminista(nombreEstado, nuevosEstadosSimbolo);
                 addEstadoDeterministaEstados(estadosDeterminista, nuevoDeterminista);
                 iteradorNombres++;
                 encolar(cola,nuevoDeterminista);
+                printf("ahora se haran las transiciones");
+                TransicionDeterminista* transicion= crearTransicionDeterminista(simboloStr,nuevoDeterminista);
+                printf("se agrega la transicion %s\n", transicion->cadena);
+                printf("al estado %s\n", nuevoDeterminista->etiqueta);
+                addTransicionDeterministaTransiciones(estadoActual->transiciones, transicion);
+                printf("se agrego la transicion\n");
+
             }        
         }
+        imprimirEstadoDeterminista(estadoActual);
     }
-    
-    // printf("si acabos");
-    // imprimirEstadosDeterminista(estadosDeterminista);
-
-    // for (int i = 0; i <3; i++){
-    //     // imprimirEstadoDeterminista(estadosDeterminista->estados[i]);
-    //     for(int j = 0; j < 3; j++){
-    //         printf("comparando %s con %s\n", estadosDeterminista->estados[i]->etiqueta, estadosDeterminista->estados[j]->etiqueta);
-    //         int iguales = sonEstadosIguales(estadosDeterminista->estados[i]->estados, estadosDeterminista->estados[j]->estados);
-    //         if(iguales){
-    //             printf("son iguales\n");
-    //         }
-    //     }   
-    // }
     imprimirEstadosDeterminista(estadosDeterminista);
-    
+    printf("%s",alfabeto);
+    generarArchivoTXT(estadosDeterminista,alfabeto);
 
 }
+void generarArchivoTXT(EstadosDeterminista* estadosDeterminista,char* alfabeto){
+    printf("Alfabeto: %s\n", alfabeto);
+    FILE* file = fopen("automataDeterminista.txt", "w");
+    if (file == NULL) {
+        perror("No se pudo abrir el archivo para escritura");
+        return;
+    }
+    printf("Estados DFA: ");
+    for (int i = 0; i < estadosDeterminista->cantidadEstados; i++) {
+        fprintf(file, "%s", estadosDeterminista->estados[i]->etiqueta);
+        printf("%s", estadosDeterminista->estados[i]->etiqueta);
+        if (i < estadosDeterminista->cantidadEstados - 1) {
+            fprintf(file, ",");
+            printf(",");
+        }
+    }
+    fprintf(file, "\n");
+    printf("\n");
+    printf("Alfabeto: %s\n", alfabeto);
+    int lenAlfabeto = cadenaTam(alfabeto);
+    for (int i = 0; i < lenAlfabeto; i++) {
+        fprintf(file, "%c", alfabeto[i]);
+        if (i < lenAlfabeto - 1) {
+            fprintf(file, ",");
+        }
+    }
+    fprintf(file, "\n");
+    printf("\n");
 
-int validarAutomata(Estados* estados,char* cadena){
-    int valido=0;
-    int tamCadena= cadenaTam(cadena);
-    Pila* pila=  crearPila(pila);
-    NodoPila* nodoAux;
-    Estado* estadoAux;
-    Estado* estadoInicial = obtenerEstadoInicial(estados);
-    printf("El estado Inicial es %s \n", estadoInicial->etiqueta);
-    Camino* caminoInicial= crearCamino(estadoInicial->etiqueta);
-    NodoPila* nodoInicial = crearNodoPila(estadoInicial,caminoInicial,0);
-    apilar(pila,nodoInicial);
-    while(!isEmpty(pila)){
-        nodoAux= desapilar(pila);
-        estadoAux=nodoAux->estado;
-        int nuevoNivel= nodoAux->nivel +1;
-        //printf("camino actual %s\n", nodoAux->camino->cadenaEstados);
-        if(estadoAux->transiciones==NULL){
-            // puts("camino invalido");
-            // imprimirCamino(nodoAux->camino);
-        }else{
-            if(tamCadena==nuevoNivel-1){
-                if(istEstadoAceptacion(estadoAux)){
-                    printf("caminoValido");
-                    imprimirCamino(nodoAux->camino);
-                    valido++;
-                }else{
-                    Transiciones* transicionesAux= estadoAux->transiciones;
-                    int tamTransiciones= estadoAux->transiciones->cantidadTransiciones;
-                    while(tamTransiciones!=0){
-                        Transicion* transicionActual = &transicionesAux->transicion[tamTransiciones-1];
-                        char* cadenaTransicion = copiarCadena(transicionActual->cadena);
-                        // printf("comparando la cadena de transicion %s ", cadenaTransicion);
-                        // printf("con la cadena original %s \n",nuevaCadena);
-                        if(cadenasIguales(cadenaTransicion,"e")){
-                            Estado* estadoActual=transicionActual->sigEstado;
-                            Camino* nuevoCamino = crearCamino(concatenar(concatenar(nodoAux->camino->cadenaEstados,concatenar(concatenar("(",cadenaTransicion),")->")),estadoActual->etiqueta));
-                            NodoPila* nuevoNodo = crearNodoPila(estadoActual,nuevoCamino,nuevoNivel-1);
-                            // printf("transicion epsilon, se apila el estado %s con nivel %d\n", estadoActual->etiqueta, nuevoNivel-1);
-                            apilar(pila,nuevoNodo);
-                        }
-                        tamTransiciones--;
-                    }
+    printf("Estado Inicial DFA: %s\n", estadosDeterminista->estados[0]->etiqueta);
+    fprintf(file, "%s\n", estadosDeterminista->estados[0]->etiqueta);
 
-                    // puts("camino invalido, no es estado de aceptacion");
-                    // imprimirCamino(nodoAux->camino);
+    printf("Transiciones DFA:\n");
+    for (int i = 0; i < estadosDeterminista->cantidadEstados; i++) {
+        EstadoDeterminista* estadoOrigen = estadosDeterminista->estados[i];
+        if (estadoOrigen->transiciones) { 
+            for (int j = 0; j < estadoOrigen->transiciones->cantidadTransiciones; j++) {
+                TransicionDeterminista* trans = &estadoOrigen->transiciones->transicion[j];
+                if (trans->sigEstado) {
+                    fprintf(file, "%s,%s,%s\n",estadoOrigen->etiqueta,trans->cadena,trans->sigEstado->etiqueta);
+                    printf("%s,%s,%s\n",estadoOrigen->etiqueta,trans->cadena,trans->sigEstado->etiqueta);
                 }
-            }else{
-                Transiciones* transicionesAux= estadoAux->transiciones;
-                int tamTransiciones= estadoAux->transiciones->cantidadTransiciones;
-                if(tamTransiciones==0){
-                    //  puts("se llego al final de un camino sin transiciones");
-                    //  imprimirCamino(nodoAux->camino);
-                    //  printf("nivel %d\n", nuevoNivel);
-                }
-                // printf("el estado %s tiene %d transiciones\n", estadoAux->etiqueta, tamTransiciones);
-                while(tamTransiciones!=0){
-                    Transicion* transicionActual = &transicionesAux->transicion[tamTransiciones-1];
-                    char* cadenaTransicion = copiarCadena(transicionActual->cadena);
-                    char cadenaEnNivel [2] ="";
-                    cadenaEnNivel[0]=cadena[nuevoNivel-1];
-                    cadenaEnNivel[1]='\0';
-                    char* nuevaCadena=  cadenaEnNivel;
-                    // printf("comparando la cadena de transicion %s ", cadenaTransicion);
-                    // printf("con la cadena original %s \n",nuevaCadena);
-                    if(cadenasIguales(cadenaTransicion,nuevaCadena)){
-                        //puts("cadenas iguales, se apila");
-                        Estado* estadoActual=transicionActual->sigEstado;
-                        Camino* nuevoCamino = crearCamino(concatenar(concatenar(nodoAux->camino->cadenaEstados,concatenar(concatenar("(",cadenaTransicion),")->")),estadoActual->etiqueta));
-                        NodoPila* nuevoNodo = crearNodoPila(estadoActual,nuevoCamino,nuevoNivel);
-                        // printf("transicion con %s, se apila el estado %s con nivel %d\n", cadenaTransicion,estadoActual->etiqueta, nuevoNivel);
-                        apilar(pila,nuevoNodo);
-                    }else if(cadenasIguales(cadenaTransicion,"e")){
-                        
-                        Estado* estadoActual=transicionActual->sigEstado;
-                        Camino* nuevoCamino = crearCamino(concatenar(concatenar(nodoAux->camino->cadenaEstados,concatenar(concatenar("(",cadenaTransicion),")->")),estadoActual->etiqueta));
-                        NodoPila* nuevoNodo = crearNodoPila(estadoActual,nuevoCamino,nuevoNivel-1);
-                        // printf("transicion epsilon, se apila el estado %s con nivel %d\n", estadoActual->etiqueta, nuevoNivel-1);
-                        apilar(pila,nuevoNodo);
-                    }
-                    tamTransiciones--;
-                }
-
-                //identificaremos las que tienen transiciones epsilon
-
             }
         }
-        //puts("todos los camions apilados");
     }
-    return valido;
+    fclose(file);
 }

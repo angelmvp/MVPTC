@@ -1,13 +1,12 @@
 #include "MVPPila.h"
 
-Estados* unionEstados(Estados* e1, Estados* e2);
-
 Estados* cerraduraEpsilon(Estado* estado);
 Estados* cerraduraEpsilonEstados(Estados* estados);
 Estados* moverAEstados(Estados* estados, char* simbolo);
 Estados* moverA(Estado* estados, char* simbolo);
 Estados* irAEstados(Estados* estados, char* simbolo);
 Estados* irA(Estado* estado, char* simbolo);
+
 int existeEnConnjunto(Estados* estados, Estado* estado){
     for(int i=0;i<estados->cantidadEstados;i++){
         if(cadenasIguales(estados->estados[i]->etiqueta,estado->etiqueta)){
@@ -16,22 +15,7 @@ int existeEnConnjunto(Estados* estados, Estado* estado){
     }
     return 0;
 }
-Estados* unionEstados(Estados* e1, Estados* e2){
-    Estados* nuevosEstados= (Estados*)malloc(sizeof(Estados));
-    nuevosEstados->cantidadEstados=0;
-    nuevosEstados->estados=(Estado**)malloc(sizeof(Estado*)*10);
-    for(int i=0;i<e1->cantidadEstados;i++){
-        nuevosEstados->estados[i]=e1->estados[i];
-        nuevosEstados->cantidadEstados++;
-    }
-    for(int i=0;i<e2->cantidadEstados;i++){
-        if(!existeEnConnjunto(nuevosEstados,e2->estados[i])){
-            nuevosEstados->estados[nuevosEstados->cantidadEstados]=e2->estados[i];
-            nuevosEstados->cantidadEstados++;
-        }
-    }
-    return nuevosEstados;
-}
+
 Estados* cerraduraEpsilon(Estado* estado){
     char* estadosEpsilon[100];
     for(int i=0;i<100;i++){
@@ -164,7 +148,13 @@ Estados* irAEstados(Estados* estados, char* simbolo){
 }
 Estados* irA(Estado* estado, char* simbolo){
     Estados* estadosMover= moverA(estado, simbolo);
-    return NULL;
+    Estados* cerradura= cerraduraEpsilonEstados(estadosMover);
+    printf("Estados buenos de ir A con el simbolo %s \n",simbolo);
+    // for (int j=0; j<cerradura->cantidadEstados; j++){
+    //     printf("estado %s ", cerradura->estados[j]->etiqueta);
+    //     printf("\n");
+    // }
+    return cerradura;
 }
 
 typedef struct EstadosDeterminista{
@@ -207,9 +197,12 @@ void addEstadoDeterministaEstados(EstadosDeterminista* estadosDeterminista, Esta
 }
 void imprimirEstadosDeterminista(EstadosDeterminista* estadosDeterminista){
     printf("Estados del automata determinista\n");
-    printf("cantidad de estados %d\n", estadosDeterminista->cantidadEstados);
+    // printf("cantidad de estados %d\n", estadosDeterminista->cantidadEstados);
+    // for(int i=0;i<estadosDeterminista->cantidadEstados;i++){
+    //     printf("Estado %s\n",estadosDeterminista->estados[i]->etiqueta);
+    // }
     for(int i=0;i<estadosDeterminista->cantidadEstados;i++){
-        printf("Estado %s\n",estadosDeterminista->estados[i]->etiqueta);
+        imprimirEstadoDeterminista(estadosDeterminista->estados[i]);
     }
 }
 
@@ -228,14 +221,15 @@ int sonEstadosIguales(Estados* estados1, Estados* estados2){
     return 1;
 }
 
-int existeEnConjuntoDeterminista(EstadosDeterminista* estadosDet, Estados* estados){
+EstadoDeterminista* existeEnConjuntoDeterminista(EstadosDeterminista* estadosDet, Estados* estados){
     for(int i=0;i<estadosDet->cantidadEstados;i++){
         if(sonEstadosIguales(estadosDet->estados[i]->estados,estados)){
-            return 1;
+            return estadosDet->estados[i];
         }
     }
-    return 0;
+    return NULL;
 }
+
 
 
 
